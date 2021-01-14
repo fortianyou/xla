@@ -153,6 +153,7 @@ cc_library(
         "//tensorflow/core/distributed_runtime/rpc:grpc_runtime",
         "//tensorflow/core/kernels:data_flow",
         "//tensorflow/core/protobuf/tpu:topology_proto_cc",
+        "//tensorflow/core/tpu:tpu_api_dlsym_initializer",
         "//tensorflow/stream_executor:stream_executor_impl",
         "@com_google_absl//absl/numeric:int128",
         "@com_google_absl//absl/strings",

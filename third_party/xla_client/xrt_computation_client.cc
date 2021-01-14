@@ -3,10 +3,12 @@
 #include <cstdlib>
 #include <fstream>
 #include <functional>
+#include <iostream>
 #include <limits>
 #include <list>
 #include <sstream>
 #include <unordered_map>
+using std::cerr;
 
 #include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
@@ -25,6 +27,7 @@
 #include "tensorflow/compiler/xla/xla_client/xrt_local_service.h"
 #include "tensorflow/compiler/xrt/xrt_util.h"
 #include "tensorflow/core/framework/allocator.h"
+#include "tensorflow/core/tpu/tpu_api_dlsym_initializer.h"
 #include "tensorflow/core/util/device_name_utils.h"
 
 namespace xla {
@@ -244,7 +247,9 @@ XrtComputationClient::XrtComputationClient(
       options_.global_device_map.find(options_.default_device);
   XLA_CHECK(default_device_target != options_.global_device_map.end())
       << options_.default_device;
+  std::stringstream ss;
   for (auto& device : options_.devices) {
+    ss << device << ", ";
     XLA_CHECK(options_.global_device_map.find(device) !=
               options_.global_device_map.end())
         << "Missing device in global map: " << device;
@@ -261,7 +266,13 @@ XrtComputationClient::XrtComputationClient(
                << "/replica:0/task:" << worker_target.first.task_no;
   }
   TF_VLOG(1) << "XRT default device: " << options_.default_device;
-  MaybeCreateLocalService(options_);
+  // Only one localServer should be created.
+  if (options_.devices.count("CPU:0") > 0) {
+    cerr << "process with " << ss.str() << " started the local server\n\n\n";
+    MaybeCreateLocalService(options_);
+  } else {
+    cerr << "process with " << ss.str() << " did not start local server\n\n\n";
+  }
   InitializeDevices(std::move(topology_proto));
   StartHandleReleaser();
 }
