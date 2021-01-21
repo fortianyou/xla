@@ -117,7 +117,6 @@ _FN_OUT = {
     'binary_cross_entropy_out': FuncOpts(),
     'binary_cross_entropy_backward_out': FuncOpts(),
     'clamp_out': FuncOpts(),
-    'div_out': FuncOpts(),
     'gather_out': FuncOpts(),
     'ger_out': FuncOpts(),
     'hardsigmoid_out': FuncOpts(),

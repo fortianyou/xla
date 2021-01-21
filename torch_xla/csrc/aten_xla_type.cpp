@@ -1171,6 +1171,24 @@ at::Tensor& AtenXlaType::div_(at::Tensor& self, at::Scalar other) {
   return self;
 }
 
+at::Tensor& AtenXlaType::div_out(const at::Tensor& self,
+                                 const at::Tensor& other, at::Tensor& out) {
+  XLA_FN_COUNTER("xla::");
+  return div_out(self, other, "true", out);
+}
+
+at::Tensor& AtenXlaType::div_out(const at::Tensor& self,
+                                 const at::Tensor& other,
+                                 std::string rounding_mode, at::Tensor& out) {
+  XLA_FN_COUNTER("xla::");
+  at::ScalarType dtype = at::result_type(self, other);
+  auto operands = GetBinaryOperands(self, other);
+  XLATensor out_tensor = bridge::GetXlaTensor(out);
+  XLATensor::div_out(operands.first, operands.second, out_tensor, rounding_mode,
+                     dtype);
+  return out;
+}
+
 at::Tensor AtenXlaType::dot(const at::Tensor& self, const at::Tensor& tensor) {
   XLA_FN_COUNTER("xla::");
   XLA_CHECK_EQ(self.dim(), 1)

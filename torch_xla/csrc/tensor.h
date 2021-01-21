@@ -466,6 +466,10 @@ class XLATensor {
   static XLATensor div(const XLATensor& input, at::Scalar other);
   static void div_(XLATensor& input, const XLATensor& other);
   static void div_(XLATensor& input, at::Scalar other);
+  static void div_out(
+      const XLATensor& input, const XLATensor& other, XLATensor& out,
+      std::string rounding_mode,
+      c10::optional<at::ScalarType> logical_element_type = c10::nullopt);
 
   // A generalized contraction between tensors of arbitrary dimension defined by
   // the given equation and applied to the input tensors.

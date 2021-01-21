@@ -1096,6 +1096,47 @@ void XLATensor::div_(XLATensor& input, at::Scalar other) {
   input.SetInPlaceIrValue(input_value / other_value);
 }
 
+using std::cerr;
+void XLATensor::div_out(const XLATensor& input, const XLATensor& other,
+                        XLATensor& out, std::string rounding_mode,
+                        c10::optional<at::ScalarType> logical_element_type) {
+  at::ScalarType scalar_type =
+      at::typeMetaToScalarType(c10::get_default_dtype());
+  xla::PrimitiveType input_type = input.shape().get().element_type();
+  xla::PrimitiveType other_type = other.shape().get().element_type();
+  bool input_is_float = xla::primitive_util::IsFloatingPointType(input_type);
+  bool other_is_float = xla::primitive_util::IsFloatingPointType(other_type);
+  if (input_is_float && !other_is_float) {
+    scalar_type = TensorTypeFromXlaType(input_type);
+  } else if (!input_is_float && other_is_float) {
+    scalar_type = TensorTypeFromXlaType(other_type);
+  }
+  ir::Value input_value = GetFloatingIrValue(input, scalar_type);
+  ir::Value other_value = GetFloatingIrValue(other, scalar_type);
+  ir::Value res = input_value / other_value;
+
+  if (rounding_mode == "trunc") {
+    res = ir::ops::Trunc(res);
+  } else if (rounding_mode == "floor") {
+    res = ir::ops::Floor(res);
+  } else if (rounding_mode != "true") {
+    XLA_CHECK(false)
+        << "rounding_mode must be one of 'true', 'trunc', or 'floor'";
+  }
+
+  // Promote the result to the logical_element_type if one of the
+  // input and the other is float. If that is not the case logical_element_type
+  // will be non-floating-point type.
+  if (input_is_float || other_is_float) {
+    res = input.MaybeCastIrValue(std::move(res), input.GetDevice(),
+                                 logical_element_type);
+  } else {
+    res =
+        input.MaybeCastIrValue(std::move(res), input.GetDevice(), scalar_type);
+  }
+  out.SetInPlaceIrValue(res);
+}
+
 XLATensor XLATensor::eq(const XLATensor& input, at::Scalar other) {
   return DispatchComparisonOp(at::aten::eq, input, other);
 }

@@ -422,6 +422,49 @@ TEST_F(AtenXlaTensorTest, TestDivScalarInPlace) {
   ExpectCounterChanged("xla::div_", cpp_test::GetIgnoredCounters());
 }
 
+TEST_F(AtenXlaTensorTest, TestDivOut) {
+  for (torch::ScalarType scalar_type : {torch::kFloat, torch::kDouble}) {
+    torch::Tensor a = torch::rand({3, 4}, torch::TensorOptions(scalar_type));
+    torch::Tensor b = torch::rand({3, 4}, torch::TensorOptions(scalar_type));
+    torch::Tensor c = torch::empty({3, 4}, torch::TensorOptions(scalar_type));
+    torch::div_out(c, a, b);
+    ForEachDevice([&](const torch::Device& device) {
+      torch::Tensor xla_a = CopyToDevice(a, device);
+      torch::Tensor xla_b = CopyToDevice(b, device);
+      torch::Tensor xla_c = torch::empty({3, 4}, xla_b.options());
+      torch::div_out(xla_c, xla_a, xla_b);
+      AllClose(c, xla_c);
+    });
+  }
+  ExpectCounterNotChanged("aten::.*", cpp_test::GetIgnoredCounters());
+  ExpectCounterChanged("xla::div_out", cpp_test::GetIgnoredCounters());
+}
+
+TEST_F(AtenXlaTensorTest, TestDivOutRoundingMode) {
+  for (torch::ScalarType scalar_type : {torch::kFloat, torch::kDouble}) {
+    for (std::string rounding_mode : {"trunc", "floor", "true"}) {
+      for (float sign : {1.0, -1.0}) {
+        torch::Tensor a =
+            torch::rand({3, 4}, torch::TensorOptions(scalar_type)) * sign;
+        torch::Tensor b =
+            torch::rand({3, 4}, torch::TensorOptions(scalar_type));
+        torch::Tensor c =
+            torch::empty({3, 4}, torch::TensorOptions(scalar_type));
+        torch::div_out(c, a, b, rounding_mode);
+        ForEachDevice([&](const torch::Device& device) {
+          torch::Tensor xla_a = CopyToDevice(a, device);
+          torch::Tensor xla_b = CopyToDevice(b, device);
+          torch::Tensor xla_c = torch::empty({3, 4}, xla_b.options());
+          torch::div_out(xla_c, xla_a, xla_b, rounding_mode);
+          AllClose(c, xla_c);
+        });
+      }
+    }
+  }
+  ExpectCounterNotChanged("aten::.*", cpp_test::GetIgnoredCounters());
+  ExpectCounterChanged("xla::div_out", cpp_test::GetIgnoredCounters());
+}
+
 TEST_F(AtenXlaTensorTest, TestRsub) {
   torch::Tensor input =
       torch::rand({2, 2}, torch::TensorOptions(torch::kFloat));

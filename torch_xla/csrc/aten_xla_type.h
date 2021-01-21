@@ -312,6 +312,12 @@ class AtenXlaType {
 
   static at::Tensor& div_(at::Tensor& self, at::Scalar other);
 
+  static at::Tensor& div_out(const at::Tensor& self, const at::Tensor& other,
+                             at::Tensor& out);
+
+  static at::Tensor& div_out(const at::Tensor& self, const at::Tensor& other,
+                             std::string rounding_mode, at::Tensor& out);
+
   static at::Tensor dot(const at::Tensor& self, const at::Tensor& tensor);
 
   static at::Tensor elu(const at::Tensor& self, at::Scalar alpha,
